@@ -4,45 +4,59 @@
 #include <chrono>
 #include <mutex>
 #include <Windows.h>
+#include <vector>
 
-class consol_color
+
+static void SetColor(int text, int background)
 {
-public:
-    static void SetColor(int text, int background)
+    HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleTextAttribute(hStdOut, (WORD)((background << 4) | text));
+}
+
+void set_cursor(int x, int y)
     {
-        HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
-        SetConsoleTextAttribute(hStdOut, (WORD)((background << 4) | text));
-    }
-};
+    COORD c{};
+    c.X = x;
+    c.Y = y;
+    auto handle = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleCursorPosition(handle, c);
+}
 
 std::mutex m;
 
-void print(int t,int c) {
-    std::lock_guard<std::mutex> lg(m);
+void print(int numThread,int count,int c) {    
+    m.lock();
+    set_cursor(0, numThread);
+    std::cout << "Thread num: " << numThread+1 << " ID: " << std::this_thread::get_id();
+    m.unlock();
     auto start = std::chrono::high_resolution_clock::now();
-    for (int i = 0; i < 15; i++) {        
-        std::this_thread::sleep_for(std::chrono::milliseconds(t));
-        consol_color::SetColor(c, 0);
+    for (int i = 0; i < count; i++) {         
+        std::lock_guard<std::mutex> lg(m);
+        set_cursor(25+i, numThread);
+        SetColor(c, 0);
         std::cout << "***";
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
     }
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> time = end - start;
-    std::cout << '\t' << time.count() << "ms\n";
+    std::lock_guard<std::mutex> lg(m);
+    set_cursor(35+count, numThread);
+    std::cout << '\t' << time.count() << " ms\n";
 }
 
 int main()
 {
-    std::thread t1(print, 100, 10);
-    std::thread t2(print, 120, 12);
-    std::thread t3(print, 150, 13);
-    std::thread t4(print, 180, 14);
-    std::thread t5(print, 200, 15);
+    std::vector<std::thread> ThreadVector;
+    for (int i = 0; i < 5; i++) {
+        ThreadVector.push_back(std::thread(print, i, 20,i+1));
+    }
+    
+    for (auto& v : ThreadVector) {
+        v.join();
+    }
 
-    t1.join();
-    t2.join();
-    t3.join();
-    t4.join();
-    t5.join();
+    for (int i = 0; i < 5; ++i)
+        std::cout << "\n";
 
     return 0;
 }
