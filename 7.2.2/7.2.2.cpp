@@ -35,7 +35,7 @@ void print(int numThread,int count,int c) {
         set_cursor(25+i, numThread);
         SetColor(c, 0);
         std::cout << "***";
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> time = end - start;
