@@ -24,18 +24,18 @@ void set_cursor(int x, int y)
 
 std::mutex m;
 
-void print(int numThread,int count,int c) {    
+void print(int numThread,int count,int c,int sleep) {    
     m.lock();
     set_cursor(0, numThread);
     std::cout << "Thread num: " << numThread+1 << " ID: " << std::this_thread::get_id();
     m.unlock();
     auto start = std::chrono::high_resolution_clock::now();
-    for (int i = 0; i < count; i++) {         
+    for (int i = 0; i < count; i++) {    
+        std::this_thread::sleep_for(std::chrono::milliseconds(sleep));
         std::lock_guard<std::mutex> lg(m);
         set_cursor(25+i, numThread);
         SetColor(c, 0);
-        std::cout << "***";
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::cout << "***";        
     }
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> time = end - start;
@@ -48,7 +48,7 @@ int main()
 {
     std::vector<std::thread> ThreadVector;
     for (int i = 0; i < 5; i++) {
-        ThreadVector.push_back(std::thread(print, i, 20,i+1));
+        ThreadVector.push_back(std::thread(print, i, 20,i+1,(i+1)*50));
     }
     
     for (auto& v : ThreadVector) {
